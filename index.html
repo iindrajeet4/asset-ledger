@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asset Ledger</title>
+<style>
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --text: #1c2430;
+  --text-muted: #64748b;
+  --border: #dde3ea;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #dbeafe;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --ok: #15803d;
+  --ok-soft: #dcfce7;
+  --shadow: 0 1px 3px rgba(16,24,40,.08), 0 1px 2px rgba(16,24,40,.06);
+  --radius: 10px;
+}
+[data-theme="dark"] {
+  --bg: #0f141b;
+  --surface: #1a212c;
+  --surface-2: #232c39;
+  --text: #e5eaf1;
+  --text-muted: #94a3b8;
+  --border: #2e3949;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-soft: #1e3a5f;
+  --danger: #f87171;
+  --danger-soft: #452224;
+  --warn: #fbbf24;
+  --warn-soft: #42351a;
+  --ok: #4ade80;
+  --ok-soft: #16321f;
+  --shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, "Noto Sans Thai", Tahoma, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+header h1 { font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 8px; }
+header h1 .logo {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: var(--accent); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700;
+}
+.spacer { flex: 1; }
+main { max-width: 1250px; margin: 0 auto; padding: 20px; }
+
+/* Buttons */
+button, .btn {
+  font: inherit;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+button:hover { background: var(--surface-2); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary:hover { background: var(--accent-hover); }
+button.danger { color: var(--danger); }
+button.small { padding: 4px 9px; font-size: 13px; }
+button.icon { padding: 6px 9px; }
+
+/* Summary cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  box-shadow: var(--shadow);
+}
+.card .label { font-size: 12.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+.card .value { font-size: 1.7rem; font-weight: 700; margin-top: 2px; }
+.card.repair .value { color: var(--warn); }
+.card.expiring .value { color: var(--danger); }
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.toolbar input[type="search"], .toolbar select, .modal input, .modal select, .modal textarea {
+  font: inherit;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+.toolbar input[type="search"] { min-width: 220px; flex: 1; max-width: 340px; }
+.toolbar input:focus, .toolbar select:focus, .modal input:focus, .modal select:focus, .modal textarea:focus {
+  outline: 2px solid var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* Table */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+table { width: 100%; border-collapse: collapse; min-width: 900px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td.notes-cell { white-space: normal; max-width: 200px; }
+th {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  user-select: none;
+}
+th.sortable { cursor: pointer; }
+th.sortable:hover { color: var(--text); }
+th .arrow { font-size: 10px; margin-left: 3px; }
+tbody tr:hover { background: var(--surface-2); }
+tbody tr:last-child td { border-bottom: none; }
+.empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+.table-foot { color: var(--text-muted); font-size: 12.5px; margin-top: 8px; text-align: right; }
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge.inuse   { background: var(--ok-soft); color: var(--ok); }
+.badge.instock { background: var(--accent-soft); color: var(--accent); }
+.badge.repair  { background: var(--warn-soft); color: var(--warn); }
+.badge.retired { background: var(--surface-2); color: var(--text-muted); }
+.warranty-expired { color: var(--danger); font-weight: 600; }
+.warranty-soon    { color: var(--warn); font-weight: 600; }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(10,15,25,.55);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 16px;
+  z-index: 50;
+  overflow-y: auto;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 620px;
+  padding: 22px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.25);
+}
+.modal h2 { margin: 0 0 16px; font-size: 1.15rem; }
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+.form-grid .full { grid-column: 1 / -1; }
+.field label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+.field input, .field select, .field textarea { width: 100%; }
+.field textarea { resize: vertical; min-height: 60px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+/* Label modal */
+.label-sheet {
+  border: 2px solid var(--text);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  background: #fff;
+  color: #111;
+  max-width: 360px;
+  margin: 0 auto;
+}
+.label-sheet .l-name { font-weight: 700; font-size: 1.05rem; }
+.label-sheet .l-meta { font-size: 13px; margin: 2px 0 10px; }
+.label-sheet svg { max-width: 100%; height: auto; }
+.label-sheet .l-serial { font-family: Consolas, monospace; font-size: 13px; margin-top: 6px; letter-spacing: .05em; }
+
+@media print {
+  body * { visibility: hidden !important; }
+  #labelBackdrop, #labelBackdrop * { visibility: visible !important; }
+  #labelBackdrop { position: absolute; inset: 0; background: #fff; padding: 20px; overflow: visible; }
+  #labelBackdrop .modal { box-shadow: none; border: none; max-width: none; }
+  #labelBackdrop .modal-actions, #labelBackdrop h2 { display: none; }
+}
+
+@media (max-width: 640px) {
+  .form-grid { grid-template-columns: 1fr; }
+  header { padding: 10px 12px; }
+  main { padding: 12px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="logo">A</span><span data-i18n="appTitle">Asset Ledger</span></h1>
+  <span class="spacer"></span>
+  <button id="btnDemo" class="small" data-i18n="demoData">Demo data</button>
+  <button id="btnExportCsv" class="small" data-i18n="exportCsv">Export CSV</button>
+  <button id="btnExportJson" class="small" data-i18n="exportJson">Backup JSON</button>
+  <button id="btnImportJson" class="small" data-i18n="importJson">Import JSON</button>
+  <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+  <button id="btnLang" class="small icon" title="Language">EN/ไทย</button>
+  <button id="btnTheme" class="small icon" title="Theme">◐</button>
+</header>
+
+<main>
+  <div class="cards">
+    <div class="card"><div class="label" data-i18n="totalAssets">Total assets</div><div class="value" id="cardTotal">0</div></div>
+    <div class="card repair"><div class="label" data-i18n="inRepair">In repair</div><div class="value" id="cardRepair">0</div></div>
+    <div class="card expiring"><div class="label" data-i18n="warrantySoon">Warranty ≤ 60 days</div><div class="value" id="cardExpiring">0</div></div>
+    <div class="card"><div class="label" data-i18n="totalValue">Total value</div><div class="value" id="cardValue">0</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="search" id="search" data-i18n-ph="searchPh" placeholder="Search name, serial, person…">
+    <select id="filterBranch"></select>
+    <select id="filterCategory"></select>
+    <select id="filterStatus"></select>
+    <span class="spacer"></span>
+    <button class="primary" id="btnAdd" data-i18n="addAsset">+ Add asset</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr id="headRow"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="emptyMsg" style="display:none" data-i18n="noAssets">No assets found.</div>
+  </div>
+  <div class="table-foot" id="rowCount"></div>
+</main>
+
+<!-- Edit/add modal -->
+<div class="modal-backdrop" id="editBackdrop">
+  <div class="modal">
+    <h2 id="editTitle"></h2>
+    <form id="assetForm">
+      <div class="form-grid">
+        <div class="field full"><label data-i18n="fName">Asset name *</label><input name="name" required maxlength="120"></div>
+        <div class="field"><label data-i18n="fCategory">Category</label><select name="category" id="formCategory"></select></div>
+        <div class="field"><label data-i18n="fSerial">Serial no.</label><input name="serial" maxlength="60"></div>
+        <div class="field"><label data-i18n="fAssigned">Assigned to</label><input name="assignedTo" maxlength="80"></div>
+        <div class="field"><label data-i18n="fBranch">Branch / location</label><input name="branch" maxlength="80" list="branchList"><datalist id="branchList"></datalist></div>
+        <div class="field"><label data-i18n="fPurchase">Purchase date</label><input name="purchaseDate" type="date"></div>
+        <div class="field"><label data-i18n="fWarranty">Warranty expiry</label><input name="warrantyExpiry" type="date"></div>
+        <div class="field"><label data-i18n="fPrice">Price</label><input name="price" type="number" min="0" step="0.01"></div>
+        <div class="field"><label data-i18n="fStatus">Status</label><select name="status" id="formStatus"></select></div>
+        <div class="field full"><label data-i18n="fNotes">Notes</label><textarea name="notes" maxlength="500"></textarea></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="btnCancel" data-i18n="cancel">Cancel</button>
+        <button type="submit" class="primary" data-i18n="save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Label modal -->
+<div class="modal-backdrop" id="labelBackdrop">
+  <div class="modal">
+    <h2 data-i18n="assetLabel">Asset label</h2>
+    <div class="label-sheet" id="labelSheet"></div>
+    <div class="modal-actions">
+      <button type="button" id="btnCloseLabel" data-i18n="close">Close</button>
+      <button type="button" class="primary" id="btnPrintLabel" data-i18n="printLabel">Print label</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function () {
+
+/* ---------- i18n ---------- */
+const STR = {
+  en: {
+    appTitle: "Asset Ledger", demoData: "Demo data", exportCsv: "Export CSV",
+    exportJson: "Backup JSON", importJson: "Import JSON",
+    totalAssets: "Total assets", inRepair: "In repair",
+    warrantySoon: "Warranty ≤ 60 days", totalValue: "Total value",
+    searchPh: "Search name, serial, person…", addAsset: "+ Add asset",
+    noAssets: "No assets found. Click “+ Add asset” or load demo data.",
+    fName: "Asset name *", fCategory: "Category", fSerial: "Serial no.",
+    fAssigned: "Assigned to", fBranch: "Branch / location",
+    fPurchase: "Purchase date", fWarranty: "Warranty expiry",
+    fPrice: "Price", fStatus: "Status", fNotes: "Notes",
+    cancel: "Cancel", save: "Save", close: "Close",
+    addTitle: "Add asset", editTitle: "Edit asset",
+    assetLabel: "Asset label", printLabel: "Print label",
+    edit: "Edit", del: "Delete", label: "Label",
+    confirmDelete: "Delete this asset?",
+    confirmDemo: "Add demo data to your ledger?",
+    importOk: "Import complete: {n} assets loaded.",
+    importBad: "Import failed: not a valid Asset Ledger backup file.",
+    saveFailed: "Could not save to browser storage (storage may be full or blocked). Recent changes are NOT saved — export a JSON backup and free up space.",
+    warrantyBeforePurchase: "Warranty expiry is before the purchase date.",
+    showing: "Showing {a} of {b} assets",
+    importMode: "OK = REPLACE all current data with the file.\nCancel = merge (keep current, add file items).",
+    allBranches: "All branches", allCategories: "All categories", allStatuses: "All statuses",
+    thName: "Name", thCategory: "Category", thSerial: "Serial", thAssigned: "Assigned to",
+    thBranch: "Branch", thPurchase: "Purchased", thWarranty: "Warranty", thPrice: "Price",
+    thStatus: "Status", thActions: "",
+    expired: "expired", noSerial: "(no serial)",
+    cat: { Laptop:"Laptop", Desktop:"Desktop", Phone:"Phone", Tablet:"Tablet", Printer:"Printer", Scale:"Scale", POS:"POS", Other:"Other" },
+    st: { "In use":"In use", "In stock":"In stock", "Repair":"Repair", "Retired":"Retired" }
+  },
+  th: {
+    appTitle: "สมุดทะเบียนทรัพย์สิน", demoData: "ข้อมูลตัวอย่าง", exportCsv: "ส่งออก CSV",
+    exportJson: "สำรอง JSON", importJson: "นำเข้า JSON",
+    totalAssets: "ทรัพย์สินทั้งหมด", inRepair: "กำลังซ่อม",
+    warrantySoon: "ประกันเหลือ ≤ 60 วัน", totalValue: "มูลค่ารวม",
+    searchPh: "ค้นหาชื่อ ซีเรียล ผู้ใช้…", addAsset: "+ เพิ่มทรัพย์สิน",
+    noAssets: "ไม่พบทรัพย์สิน กด “+ เพิ่มทรัพย์สิน” หรือโหลดข้อมูลตัวอย่าง",
+    fName: "ชื่อทรัพย์สิน *", fCategory: "หมวดหมู่", fSerial: "หมายเลขซีเรียล",
+    fAssigned: "ผู้ใช้งาน", fBranch: "สาขา / สถานที่",
+    fPurchase: "วันที่ซื้อ", fWarranty: "วันหมดประกัน",
+    fPrice: "ราคา", fStatus: "สถานะ", fNotes: "หมายเหตุ",
+    cancel: "ยกเลิก", save: "บันทึก", close: "ปิด",
+    addTitle: "เพิ่มทรัพย์สิน", editTitle: "แก้ไขทรัพย์สิน",
+    assetLabel: "ป้ายทรัพย์สิน", printLabel: "พิมพ์ป้าย",
+    edit: "แก้ไข", del: "ลบ", label: "ป้าย",
+    confirmDelete: "ต้องการลบทรัพย์สินนี้หรือไม่?",
+    confirmDemo: "ต้องการเพิ่มข้อมูลตัวอย่างหรือไม่?",
+    importOk: "นำเข้าสำเร็จ: โหลด {n} รายการ",
+    importBad: "นำเข้าล้มเหลว: ไฟล์สำรองไม่ถูกต้อง",
+    saveFailed: "บันทึกลงเบราว์เซอร์ไม่สำเร็จ (พื้นที่เก็บข้อมูลอาจเต็มหรือถูกบล็อก) ข้อมูลล่าสุดยังไม่ถูกบันทึก — กรุณาสำรอง JSON และล้างพื้นที่",
+    warrantyBeforePurchase: "วันหมดประกันอยู่ก่อนวันที่ซื้อ",
+    showing: "แสดง {a} จาก {b} รายการ",
+    importMode: "ตกลง = แทนที่ข้อมูลปัจจุบันทั้งหมดด้วยไฟล์\nยกเลิก = รวมข้อมูล (เก็บของเดิม เพิ่มจากไฟล์)",
+    allBranches: "ทุกสาขา", allCategories: "ทุกหมวดหมู่", allStatuses: "ทุกสถานะ",
+    thName: "ชื่อ", thCategory: "หมวดหมู่", thSerial: "ซีเรียล", thAssigned: "ผู้ใช้งาน",
+    thBranch: "สาขา", thPurchase: "วันที่ซื้อ", thWarranty: "ประกัน", thPrice: "ราคา",
+    thStatus: "สถานะ", thActions: "",
+    expired: "หมดอายุ", noSerial: "(ไม่มีซีเรียล)",
+    cat: { Laptop:"โน้ตบุ๊ก", Desktop:"เดสก์ท็อป", Phone:"โทรศัพท์", Tablet:"แท็บเล็ต", Printer:"ปริ้นเตอร์", Scale:"เครื่องชั่ง", POS:"POS", Other:"อื่น ๆ" },
+    st: { "In use":"ใช้งานอยู่", "In stock":"ในสต๊อก", "Repair":"ซ่อม", "Retired":"ปลดระวาง" }
+  }
+};
+
+const CATEGORIES = ["Laptop","Desktop","Phone","Tablet","Printer","Scale","POS","Other"];
+const STATUSES = ["In use","In stock","Repair","Retired"];
+const STATUS_CLASS = { "In use":"inuse", "In stock":"instock", "Repair":"repair", "Retired":"retired" };
+
+/* ---------- state ---------- */
+const LS_DATA = "assetLedger.assets";
+const LS_LANG = "assetLedger.lang";
+const LS_THEME = "assetLedger.theme";
+
+let assets = load();
+let lang = localStorage.getItem(LS_LANG) || "en";
+let theme = localStorage.getItem(LS_THEME) || "light";
+let sortKey = "name";
+let sortDir = 1;
+let editingId = null;
+
+function t(key) { return STR[lang][key] !== undefined ? STR[lang][key] : (STR.en[key] || key); }
+function load() {
+  try {
+    const raw = localStorage.getItem(LS_DATA);
+    const arr = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(arr)) return [];
+    // Drop corrupt entries so one bad record cannot break rendering.
+    return arr.filter((a) => a && typeof a === "object" && typeof a.name === "string" && a.name);
+  } catch (e) { return []; }
+}
+function persist() {
+  try {
+    localStorage.setItem(LS_DATA, JSON.stringify(assets));
+  } catch (e) {
+    alert(t("saveFailed"));
+  }
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+function cleanDate(v) { return typeof v === "string" && DATE_RE.test(v) ? v : ""; }
+function cleanPrice(v) {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+/* ---------- DOM refs ---------- */
+const $ = (id) => document.getElementById(id);
+const tbody = $("tbody"), headRow = $("headRow"), emptyMsg = $("emptyMsg");
+const searchEl = $("search");
+const fBranch = $("filterBranch"), fCategory = $("filterCategory"), fStatus = $("filterStatus");
+
+/* ---------- rendering ---------- */
+const COLUMNS = [
+  { key: "name", label: "thName" },
+  { key: "category", label: "thCategory" },
+  { key: "serial", label: "thSerial" },
+  { key: "assignedTo", label: "thAssigned" },
+  { key: "branch", label: "thBranch" },
+  { key: "purchaseDate", label: "thPurchase" },
+  { key: "warrantyExpiry", label: "thWarranty" },
+  { key: "price", label: "thPrice" },
+  { key: "status", label: "thStatus" },
+  { key: null, label: "thActions" }
+];
+
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+function fmtMoney(n) {
+  if (n == null || n === "" || isNaN(n)) return "";
+  return Number(n).toLocaleString(lang === "th" ? "th-TH" : "en-US", { maximumFractionDigits: 2 });
+}
+function fmtDate(d) {
+  if (!d) return "";
+  const dt = new Date(d + "T00:00:00");
+  if (isNaN(dt)) return d;
+  return dt.toLocaleDateString(lang === "th" ? "th-TH" : "en-GB", { year: "numeric", month: "short", day: "numeric" });
+}
+function warrantyState(d) {
+  if (!d) return "";
+  const today = new Date(); today.setHours(0,0,0,0);
+  const exp = new Date(d + "T00:00:00");
+  if (isNaN(exp)) return "";
+  const days = Math.round((exp - today) / 86400000);
+  if (days < 0) return "expired";
+  if (days <= 60) return "soon";
+  return "";
+}
+
+function renderHead() {
+  headRow.innerHTML = COLUMNS.map((c) => {
+    if (!c.key) return "<th></th>";
+    const arrow = sortKey === c.key ? '<span class="arrow">' + (sortDir === 1 ? "▲" : "▼") + "</span>" : "";
+    return '<th class="sortable" data-key="' + c.key + '">' + esc(t(c.label)) + arrow + "</th>";
+  }).join("");
+}
+
+function filtered() {
+  const q = searchEl.value.trim().toLowerCase();
+  return assets.filter((a) => {
+    if (fBranch.value && a.branch !== fBranch.value) return false;
+    if (fCategory.value && a.category !== fCategory.value) return false;
+    if (fStatus.value && a.status !== fStatus.value) return false;
+    if (!q) return true;
+    return [a.name, a.serial, a.assignedTo, a.branch, a.notes, a.category]
+      .some((v) => v && String(v).toLowerCase().indexOf(q) !== -1);
+  }).sort((a, b) => {
+    if (!sortKey) return 0;
+    let va = a[sortKey], vb = b[sortKey];
+    if (sortKey === "price") { va = Number(va) || 0; vb = Number(vb) || 0; return (va - vb) * sortDir; }
+    va = String(va || "").toLowerCase(); vb = String(vb || "").toLowerCase();
+    return va < vb ? -sortDir : va > vb ? sortDir : 0;
+  });
+}
+
+function renderTable() {
+  renderHead();
+  const rows = filtered();
+  emptyMsg.style.display = rows.length ? "none" : "block";
+  $("rowCount").textContent = assets.length
+    ? t("showing").replace("{a}", rows.length).replace("{b}", assets.length)
+    : "";
+  tbody.innerHTML = rows.map((a) => {
+    const ws = warrantyState(a.warrantyExpiry);
+    const wCls = ws === "expired" ? "warranty-expired" : ws === "soon" ? "warranty-soon" : "";
+    const wTxt = a.warrantyExpiry
+      ? fmtDate(a.warrantyExpiry) + (ws === "expired" ? " (" + t("expired") + ")" : "")
+      : "";
+    return "<tr>" +
+      "<td><strong>" + esc(a.name) + "</strong></td>" +
+      "<td>" + esc(STR[lang].cat[a.category] || a.category || "") + "</td>" +
+      "<td>" + esc(a.serial) + "</td>" +
+      "<td>" + esc(a.assignedTo) + "</td>" +
+      "<td>" + esc(a.branch) + "</td>" +
+      "<td>" + esc(fmtDate(a.purchaseDate)) + "</td>" +
+      '<td class="' + wCls + '">' + esc(wTxt) + "</td>" +
+      '<td style="text-align:right">' + esc(fmtMoney(a.price)) + "</td>" +
+      '<td><span class="badge ' + (STATUS_CLASS[a.status] || "retired") + '">' + esc(STR[lang].st[a.status] || a.status || "") + "</span></td>" +
+      '<td style="text-align:right">' +
+        '<button class="small" data-act="label" data-id="' + esc(a.id) + '">' + esc(t("label")) + "</button> " +
+        '<button class="small" data-act="edit" data-id="' + esc(a.id) + '">' + esc(t("edit")) + "</button> " +
+        '<button class="small danger" data-act="del" data-id="' + esc(a.id) + '">' + esc(t("del")) + "</button>" +
+      "</td></tr>";
+  }).join("");
+}
+
+function renderCards() {
+  $("cardTotal").textContent = assets.length;
+  $("cardRepair").textContent = assets.filter((a) => a.status === "Repair").length;
+  $("cardExpiring").textContent = assets.filter((a) => {
+    const s = warrantyState(a.warrantyExpiry);
+    return s === "soon" || s === "expired";
+  }).length;
+  const total = assets.reduce((s, a) => s + (Number(a.price) || 0), 0);
+  $("cardValue").textContent = fmtMoney(total);
+}
+
+function renderFilters() {
+  const branches = [...new Set(assets.map((a) => a.branch).filter(Boolean))].sort();
+  const keep = (el, v) => { if ([...el.options].some((o) => o.value === v)) el.value = v; };
+  const b = fBranch.value, c = fCategory.value, s = fStatus.value;
+  fBranch.innerHTML = '<option value="">' + esc(t("allBranches")) + "</option>" +
+    branches.map((x) => '<option value="' + esc(x) + '">' + esc(x) + "</option>").join("");
+  fCategory.innerHTML = '<option value="">' + esc(t("allCategories")) + "</option>" +
+    CATEGORIES.map((x) => '<option value="' + x + '">' + esc(STR[lang].cat[x]) + "</option>").join("");
+  fStatus.innerHTML = '<option value="">' + esc(t("allStatuses")) + "</option>" +
+    STATUSES.map((x) => '<option value="' + x + '">' + esc(STR[lang].st[x]) + "</option>").join("");
+  keep(fBranch, b); keep(fCategory, c); keep(fStatus, s);
+  $("branchList").innerHTML = branches.map((x) => '<option value="' + esc(x) + '">').join("");
+}
+
+function renderStatic() {
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-ph]").forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
+  $("formCategory").innerHTML = CATEGORIES.map((x) => '<option value="' + x + '">' + esc(STR[lang].cat[x]) + "</option>").join("");
+  $("formStatus").innerHTML = STATUSES.map((x) => '<option value="' + x + '">' + esc(STR[lang].st[x]) + "</option>").join("");
+  document.documentElement.lang = lang;
+}
+
+function renderAll() { renderStatic(); renderFilters(); renderCards(); renderTable(); }
+
+/* ---------- CRUD ---------- */
+const editBackdrop = $("editBackdrop"), form = $("assetForm");
+
+function openEditor(asset) {
+  editingId = asset ? asset.id : null;
+  $("editTitle").textContent = asset ? t("editTitle") : t("addTitle");
+  form.reset();
+  if (asset) {
+    for (const k of ["name","serial","assignedTo","branch","purchaseDate","warrantyExpiry","price","notes"]) {
+      form.elements[k].value = asset[k] == null ? "" : asset[k];
+    }
+    form.elements.category.value = asset.category || "Other";
+    form.elements.status.value = asset.status || "In use";
+  }
+  editBackdrop.classList.add("open");
+  form.elements.name.focus();
+}
+function closeEditor() { editBackdrop.classList.remove("open"); editingId = null; }
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const fd = new FormData(form);
+  const rec = {
+    id: editingId || uid(),
+    name: fd.get("name").trim(),
+    category: fd.get("category"),
+    serial: fd.get("serial").trim(),
+    assignedTo: fd.get("assignedTo").trim(),
+    branch: fd.get("branch").trim(),
+    purchaseDate: cleanDate(fd.get("purchaseDate")),
+    warrantyExpiry: cleanDate(fd.get("warrantyExpiry")),
+    price: cleanPrice(fd.get("price")),
+    status: fd.get("status"),
+    notes: fd.get("notes").trim()
+  };
+  const nameEl = form.elements.name;
+  if (!rec.name) {
+    nameEl.value = "";
+    nameEl.reportValidity();
+    return;
+  }
+  if (rec.purchaseDate && rec.warrantyExpiry && rec.warrantyExpiry < rec.purchaseDate) {
+    const wEl = form.elements.warrantyExpiry;
+    wEl.setCustomValidity(t("warrantyBeforePurchase"));
+    wEl.reportValidity();
+    wEl.setCustomValidity(""); // clear so the next submit is not pre-blocked
+    return;
+  }
+  const i = assets.findIndex((a) => a.id === rec.id);
+  if (i >= 0) assets[i] = rec; else assets.push(rec);
+  persist();
+  closeEditor();
+  renderAll();
+});
+
+$("btnAdd").addEventListener("click", () => openEditor(null));
+$("btnCancel").addEventListener("click", closeEditor);
+editBackdrop.addEventListener("click", (e) => { if (e.target === editBackdrop) closeEditor(); });
+
+tbody.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-act]");
+  if (!btn) return;
+  const asset = assets.find((a) => a.id === btn.dataset.id);
+  if (!asset) return;
+  if (btn.dataset.act === "edit") openEditor(asset);
+  else if (btn.dataset.act === "del") {
+    if (confirm(t("confirmDelete"))) {
+      assets = assets.filter((a) => a.id !== asset.id);
+      persist(); renderAll();
+    }
+  } else if (btn.dataset.act === "label") openLabel(asset);
+});
+
+headRow.addEventListener("click", (e) => {
+  const th = e.target.closest("th.sortable");
+  if (!th) return;
+  const k = th.dataset.key;
+  if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = 1; }
+  renderTable();
+});
+
+[searchEl, fBranch, fCategory, fStatus].forEach((el) => {
+  el.addEventListener("input", renderTable);
+});
+
+/* ---------- Code128-B barcode (label) ----------
+   Standard Code 128 module-width table, values 0-105 + stop.
+   Each entry is 6 digits = alternating bar/space widths. */
+const C128 = [
+"212222","222122","222221","121223","121322","131222","122213","122312",
+"132212","221213","221312","231212","112232","122132","122231","113222",
+"123122","123221","223211","221132","221231","213212","223112","312131",
+"311222","321122","321221","312212","322112","322211","212123","212321",
+"232121","111323","131123","131321","112313","132113","132311","211313",
+"231113","231311","112133","112331","132131","113123","113321","133121",
+"313121","211331","231131","213113","213311","213131","311123","311321",
+"331121","312113","312311","332111","314111","221411","431111","111224",
+"111422","121124","121421","141122","141221","112214","112412","122114",
+"122411","142112","142211","241211","221114","413111","241112","134111",
+"111242","121142","121241","114212","124112","124211","411212","421112",
+"421211","212141","214121","412121","111143","111341","131141","114113",
+"114311","411113","411311","113141","114131","311141","411131","211412",
+"211214","211232"
+];
+const C128_STOP = "2331112";
+
+function code128Svg(text) {
+  // Code set B covers ASCII 32..126. Reject anything else.
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c < 32 || c > 126) return null;
+  }
+  if (!text.length || text.length > 40) return null;
+  const values = [104]; // Start B
+  for (let i = 0; i < text.length; i++) values.push(text.charCodeAt(i) - 32);
+  let check = values[0];
+  for (let i = 1; i < values.length; i++) check += values[i] * i;
+  values.push(check % 103);
+  let widths = "";
+  for (const v of values) widths += C128[v];
+  widths += C128_STOP;
+  // Build SVG: quiet zone 10 modules each side.
+  const mod = 2, h = 56, quiet = 10 * mod;
+  let x = quiet, bars = "", isBar = true;
+  for (const ch of widths) {
+    const w = Number(ch) * mod;
+    if (isBar) bars += '<rect x="' + x + '" y="0" width="' + w + '" height="' + h + '" fill="#111"/>';
+    x += w;
+    isBar = !isBar;
+  }
+  const total = x + quiet;
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + total + " " + h +
+    '" width="' + total + '" height="' + h + '" shape-rendering="crispEdges">' + bars + "</svg>";
+}
+
+/* ---------- label modal ---------- */
+const labelBackdrop = $("labelBackdrop");
+function openLabel(a) {
+  const serial = a.serial || "";
+  const svg = serial ? code128Svg(serial) : null;
+  $("labelSheet").innerHTML =
+    '<div class="l-name">' + esc(a.name) + "</div>" +
+    '<div class="l-meta">' + esc(a.branch || "") +
+      (a.assignedTo ? " · " + esc(a.assignedTo) : "") + "</div>" +
+    (svg || '<div style="border:1px dashed #999;padding:14px;font-size:13px;color:#555">' +
+      esc(serial || t("noSerial")) + "</div>") +
+    '<div class="l-serial">' + esc(serial || t("noSerial")) + "</div>";
+  labelBackdrop.classList.add("open");
+}
+$("btnCloseLabel").addEventListener("click", () => labelBackdrop.classList.remove("open"));
+labelBackdrop.addEventListener("click", (e) => { if (e.target === labelBackdrop) labelBackdrop.classList.remove("open"); });
+$("btnPrintLabel").addEventListener("click", () => window.print());
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { closeEditor(); labelBackdrop.classList.remove("open"); }
+});
+
+/* ---------- import / export ---------- */
+function download(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const aEl = document.createElement("a");
+  aEl.href = url; aEl.download = filename;
+  document.body.appendChild(aEl); aEl.click();
+  document.body.removeChild(aEl);
+  URL.revokeObjectURL(url);
+}
+function stamp() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate());
+}
+
+$("btnExportJson").addEventListener("click", () => {
+  const payload = { app: "asset-ledger", version: 1, exportedAt: new Date().toISOString(), assets: assets };
+  download("asset-ledger-backup-" + stamp() + ".json", JSON.stringify(payload, null, 2), "application/json");
+});
+
+$("btnExportCsv").addEventListener("click", () => {
+  const cols = ["name","category","serial","assignedTo","branch","purchaseDate","warrantyExpiry","price","status","notes"];
+  const header = ["Name","Category","Serial","Assigned To","Branch","Purchase Date","Warranty Expiry","Price","Status","Notes"];
+  const csvCell = (v) => {
+    const s = String(v == null ? "" : v);
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [header.map(csvCell).join(",")];
+  for (const a of assets) lines.push(cols.map((c) => csvCell(a[c])).join(","));
+  download("asset-ledger-" + stamp() + ".csv", "﻿" + lines.join("\r\n"), "text/csv;charset=utf-8");
+});
+
+$("btnImportJson").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const list = Array.isArray(data) ? data : data && Array.isArray(data.assets) ? data.assets : null;
+      if (!list) throw new Error("bad");
+      const clean = list
+        .filter((a) => a && typeof a === "object" && a.name)
+        .map((a) => ({
+          id: typeof a.id === "string" && ID_RE.test(a.id) ? a.id : uid(),
+          name: String(a.name).slice(0, 120),
+          category: CATEGORIES.indexOf(a.category) >= 0 ? a.category : "Other",
+          serial: String(a.serial || "").slice(0, 60),
+          assignedTo: String(a.assignedTo || "").slice(0, 80),
+          branch: String(a.branch || "").slice(0, 80),
+          purchaseDate: cleanDate(a.purchaseDate),
+          warrantyExpiry: cleanDate(a.warrantyExpiry),
+          price: cleanPrice(a.price),
+          status: STATUSES.indexOf(a.status) >= 0 ? a.status : "In use",
+          notes: String(a.notes || "").slice(0, 500)
+        }));
+      if (assets.length && !confirm(t("importMode"))) {
+        const ids = new Set(assets.map((x) => x.id));
+        for (const item of clean) {
+          if (ids.has(item.id)) item.id = uid();
+          assets.push(item);
+        }
+      } else {
+        assets = clean;
+      }
+      persist(); renderAll();
+      alert(t("importOk").replace("{n}", clean.length));
+    } catch (err) {
+      alert(t("importBad"));
+    }
+  };
+  reader.readAsText(file, "utf-8");
+});
+
+/* ---------- demo data ---------- */
+$("btnDemo").addEventListener("click", () => {
+  if (!confirm(t("confirmDemo"))) return;
+  const iso = (offsetDays) => {
+    const d = new Date(); d.setDate(d.getDate() + offsetDays);
+    const p = (n) => String(n).padStart(2, "0");
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  };
+  const demo = [
+    { name:"Dell Latitude 5440", category:"Laptop", serial:"DL5440-A102", assignedTo:"Somchai P.", branch:"Head Office", purchaseDate:"2025-01-15", warrantyExpiry:iso(400), price:32900, status:"In use", notes:"Accounting" },
+    { name:"MacBook Air M3", category:"Laptop", serial:"MBA-M3-0091", assignedTo:"Nid K.", branch:"Head Office", purchaseDate:"2024-08-02", warrantyExpiry:iso(30), price:42900, status:"In use", notes:"Design team" },
+    { name:"HP ProDesk 400", category:"Desktop", serial:"HPPD-400-77", assignedTo:"", branch:"Branch Siam", purchaseDate:"2023-05-20", warrantyExpiry:iso(-90), price:18500, status:"In stock", notes:"Spare unit" },
+    { name:"iPhone 15", category:"Phone", serial:"IP15-TH-3321", assignedTo:"Manager Siam", branch:"Branch Siam", purchaseDate:"2024-11-11", warrantyExpiry:iso(120), price:32900, status:"In use", notes:"" },
+    { name:"iPad 10th Gen", category:"Tablet", serial:"IPAD10-556", assignedTo:"Sales floor", branch:"Branch Icon", purchaseDate:"2024-03-08", warrantyExpiry:iso(-10), price:15900, status:"Repair", notes:"Screen crack, at service center" },
+    { name:"Epson L3250", category:"Printer", serial:"EPL3250-208", assignedTo:"", branch:"Branch Icon", purchaseDate:"2023-12-01", warrantyExpiry:iso(45), price:5990, status:"In use", notes:"Ink tank" },
+    { name:"AND EK-610i Scale", category:"Scale", serial:"ANDEK-610-04", assignedTo:"Gold counter", branch:"Head Office", purchaseDate:"2022-06-30", warrantyExpiry:"", price:12500, status:"In use", notes:"Calibrated 2026-05" },
+    { name:"Sunmi T2 POS", category:"POS", serial:"SUNMI-T2-118", assignedTo:"Cashier 1", branch:"Branch Siam", purchaseDate:"2021-02-14", warrantyExpiry:iso(-800), price:21000, status:"Retired", notes:"Replaced 2026" }
+  ];
+  for (const d of demo) { d.id = uid(); assets.push(d); }
+  persist(); renderAll();
+});
+
+/* ---------- lang & theme ---------- */
+function applyTheme() { document.documentElement.dataset.theme = theme; }
+$("btnTheme").addEventListener("click", () => {
+  theme = theme === "light" ? "dark" : "light";
+  localStorage.setItem(LS_THEME, theme);
+  applyTheme();
+});
+$("btnLang").addEventListener("click", () => {
+  lang = lang === "en" ? "th" : "en";
+  localStorage.setItem(LS_LANG, lang);
+  renderAll();
+});
+
+applyTheme();
+renderAll();
+})();
+</script>
+</body>
+</html>
