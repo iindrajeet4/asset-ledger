@@ -1,11 +1,15 @@
 # Asset Ledger
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Live Demo](https://img.shields.io/badge/demo-live-blue.svg)](https://iindrajeet4.github.io/asset-ledger/) [![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen.svg)](#)
+
 A lightweight, 100% client-side IT asset tracker for small multi-branch businesses.
 One HTML file, no server, no build step, no dependencies — open `index.html` in any modern browser.
 
+**[🔗 Live Demo / ลองใช้เลย](https://iindrajeet4.github.io/asset-ledger/)**
+
 ## Getting started
 
-1. Download or clone this repository.
+1. Try it instantly at **https://iindrajeet4.github.io/asset-ledger/**, or download / clone this repository.
 2. Open `index.html` in any modern browser (Chrome, Edge, Firefox, Safari).
 3. Click **Demo data** to explore, or **+ Add asset** to start your own ledger.
 
@@ -37,10 +41,6 @@ Because data lives only in the browser:
 - Clearing browser data / site data will erase the ledger — restore from your latest JSON backup via **Import JSON**.
 - Each browser profile and each computer has its own separate ledger; use JSON export/import to move data between machines.
 
-## Screenshots
-
-*(screenshots placeholder — add images here)*
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
@@ -54,7 +54,7 @@ MIT — see [LICENSE](LICENSE).
 
 ## เริ่มต้นใช้งาน
 
-1. ดาวน์โหลดหรือ clone โปรเจกต์นี้
+1. ลองใช้ได้ทันทีที่ **https://iindrajeet4.github.io/asset-ledger/** หรือดาวน์โหลด/clone โปรเจกต์นี้
 2. เปิดไฟล์ `index.html` ในเบราว์เซอร์รุ่นใหม่ (Chrome, Edge, Firefox, Safari)
 3. กด **ข้อมูลตัวอย่าง** เพื่อทดลองใช้ หรือกด **+ เพิ่มทรัพย์สิน** เพื่อเริ่มบันทึกของคุณเอง
 
@@ -85,10 +85,6 @@ MIT — see [LICENSE](LICENSE).
 - กด **สำรอง JSON** เป็นประจำ และเก็บไฟล์ไว้ในที่ปลอดภัย (ไดรฟ์ส่วนกลางหรือคลาวด์)
 - การล้างข้อมูลเบราว์เซอร์จะทำให้ข้อมูลหายทั้งหมด — กู้คืนได้จากไฟล์สำรองล่าสุดผ่านปุ่ม **นำเข้า JSON**
 - แต่ละเบราว์เซอร์และแต่ละเครื่องมีข้อมูลแยกกัน ใช้การส่งออก/นำเข้า JSON เพื่อย้ายข้อมูลระหว่างเครื่อง
-
-## ภาพหน้าจอ
-
-*(พื้นที่สำหรับภาพหน้าจอ — เพิ่มรูปภาพที่นี่)*
 
 ## สัญญาอนุญาต
 
